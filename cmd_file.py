@@ -69,12 +69,15 @@ def get(user, file_name, parent_id):
 @click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app name.')
 @click.option('--parent-id', '-p', default='0', help='parent id')
 @click.option('--accelerator/--no-accelerator', default=False, help='enable upload via accelerator')
+@click.option('--local-file', '-f', help='local file to be uploaded')
 @click.argument('file')
-def upload(user, file,parent_id, accelerator):
+def upload(user, file, local_file, parent_id, accelerator):
     """Upload a file."""
-    client=user_client(user)
-    file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), file)
     file_name = basename(file)
+    if local_file is None:
+        local_file = file_name
+    client=user_client(user)
+    file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), local_file)
 
     try:
         parent = client.folder(folder_id=parent_id)
@@ -89,7 +92,7 @@ def upload(user, file,parent_id, accelerator):
 @click.option('--local-file', '-f', help='local file name')
 @click.argument('file')
 def download(user, file, local_file, parent_id, ):
-    """download a file."""
+    """Download a file."""
     file_name = basename(file)
     if local_file is None:
         local_file = file_name
@@ -101,7 +104,7 @@ def download(user, file, local_file, parent_id, ):
         box_file = get_file(client, file_name, parent_id)
         if box_file is not None:
             file = open(local_file, 'w')
-            file.write(box_file.content())
+            box_file.download_to(file)
             file.close()
         else:
             print "File '{0}' not found.".format(file_name)
