@@ -61,3 +61,6 @@ def auth():
     except BoxAPIException as err:
         exit("Box api error: {0}".format(err))
     return oauth
+
+def item2json(item):
+    return item._response_object

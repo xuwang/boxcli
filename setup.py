@@ -13,7 +13,6 @@ setup(
     install_requires=[
         'ConfigParser',
         'Click',
-        'simplejson',
         'boxsdk[jwt]',
     ],
     entry_points='''
