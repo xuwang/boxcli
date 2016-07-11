@@ -26,11 +26,12 @@ def list(user, limit, offset, parent_id):
     #print('The root folder is owned by: {0} (id: {1})'.format(owner['name'], owner['id']))
 
     items = root_folder.get_items(limit=limit, offset=offset)
-    if len(items) > 0:
-        #print('This is the first {0} items in the root folder:'.format(limit))
-        for item in items:
+    n = 0
+    for item in items:
+        if item.type == 'folder':
+            n += 1
             print(repr(item))
-    else:
+    if n == 0:
         print "No items found."
 
 @folder.command()
@@ -38,29 +39,30 @@ def list(user, limit, offset, parent_id):
 @click.option('--limit', '-l', default=20, help='max number of items to get.')
 @click.option('--offset', '-o', default=0, help='offset of items to get.')
 @click.option('--parent-id', '-p', default='0', help='parent id')
-@click.argument('item_name')
-def find(user, item_name, limit, offset, parent_id):
+@click.argument('folder_name')
+def find(user, folder_name, limit, offset, parent_id):
     """Find folders by name."""
     client=user_client(user)
-    results = find_items(client, user, item_name, limit, offset, parent_id)
+    results = find_items(client, user, folder_name, limit, offset, parent_id)
     if len(results) > 0:
         for item in results:
-            print(repr(item))
+            if item.type == 'folder':
+                print(repr(item))
     else:
         print('no matching items')
 
 @folder.command()
 @click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app name.')
 @click.option('--parent-id', '-p', default='0', help='parent id')
-@click.argument('item_name')
-def get(user, item_name, parent_id):
+@click.argument('folder_name')
+def get(user, folder_name, parent_id):
     """Get a folder by name."""
     client=user_client(user)
-    results = find_items(client, user, item_name, 1, 0, parent_id,)
-    if len(results) > 0:
-        print results[0]
+    item = get_folder(client, folder_name, parent_id)
+    if item is not None:
+        exit(repr(item))
     else:
-        print('no matching items')
+        print "No folder found."
 
 @folder.command()
 @click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app name.')
@@ -77,24 +79,56 @@ def create(user, folder_name, parent_id):
 
 @folder.command()
 @click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app name.')
-@click.argument('folder-id')
-def delete(user, folder_id):
+@click.option('--parent-id', '-p', default='0', help='parent id')
+@click.argument('folder_name')
+@click.argument('new_name')
+def rename(user, folder_name, new_name, parent_id):
+    """Rename a folder."""
+    client=user_client(user)
+    item = get_folder(client, folder_name, parent_id)
+    if item is not None:
+        try:
+            item.rename(new_name)
+        except BoxAPIException as err:
+            exit("Box api error: {0}".format(err))
+    else:
+        print "No folder '{0}' found.".format(folder_name)
+
+@folder.command()
+@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app name.')
+@click.option('--parent-id', '-p', default='0', help='parent id')
+@click.argument('folder_name')
+def delete(user, folder_name, parent_id):
     """Delete a folder."""
     client=user_client(user)
     try:
-        forder = client.folder(folder_id=folder_id)
-        forder.delete()
+        folder = get_folder(client, folder_name, parent_id)
+        if folder is not None:
+            folder.delete()
+            print ("Folder {0} deleted".format(folder_name))
+        else:
+            print "No folder '{0}' found.".format(folder_name)
     except BoxAPIException as err:
         print("Box api error: {0}".format(err))
 
-def find_items(client, user, item_name, limit, offset, parent_id):
-    """Find items by name."""
+def find_items(client, user, folder_name, limit, offset, parent_id):
+    """Find items by name.
+        Issue: search api will miss newly created items"""
     try:
         return client.search(
-            item_name,
+            folder_name,
             limit=limit,
             offset=offset,
             ancestor_folders=[client.folder(folder_id=parent_id)],
         )
     except BoxAPIException as err:
         exit("Box api error: {0}".format(err))
+
+def get_folder(client, folder_name, parent_id):
+    parent_folder = client.folder(folder_id=parent_id).get()
+    items = parent_folder.get_items(limit=None, offset=0)
+    if len(items) > 0:
+        for item in items:
+            if item.name == folder_name and item.type == 'folder':
+                return(item)
+    return None
