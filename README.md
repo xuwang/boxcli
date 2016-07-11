@@ -51,6 +51,7 @@ $ pip install --editable .
 	```
 	
 ## Create the default App User If you don't already have one
+_boxcli_ handles box resources, i.e. folders/files, on behalf of a "box app user" as documented in [Creating Your First App User](https://docs.box.com/docs/app-users):
 
 ```
 $ source env.sh
@@ -58,23 +59,81 @@ $ boxcli user create $BOX_DEFAULT_APP_USER_NAME
 ```
 This is the default app user when you manange folder/files in Box.
 
+## Folder Operations
+
+### List folders
+
+```
+$ boxcli folder list
+```
+
+### Create a folder
+
+```
+$ boxcli folder create myfiles
+```
+
+### Delete a folder
+
+```
+$ boxcli folder delete  myfiles
+```
+**Warning:** All items under _myfiles_ will be deleted recursively!
+
+### Update content of a file
+
+```
+$ boxcli file update README.md
+```
+
+## File Operations
+
+### List files
+
+```
+$ boxcli file list
+```
+
+### Upload a file
+
+```
+$ boxcli file upload README.md
+```
+
+### Download a file
+
+```
+$ boxcli file download README.md
+```
+
+### Update content of a file
+
+```
+$ boxcli file update README.md
+```
+### Delete a file
+
+```
+$ boxcli file delete README.md
+```
+
 ## Getting Help
 
 ```
 $ boxcli --help 
 Usage: boxcli [OPTIONS] COMMAND [ARGS]...
-
+  box command line tool
 Options:
   --help  Show this message and exit.
 Commands:
-  file    commands for manage box files.
-  folder  commands for manage box folders.
-  user    commands for manage box app users.
+  file    sub-commands for manage box files.
+  folder  sub-commands for manage box folders.
+  user    sub-commands for manage box app users.
 ...
 
 $ boxcli folder --help
 Usage: boxcli folder [OPTIONS] COMMAND [ARGS]...
-  commands for managing box folders.
+  sub-commands for manage box folders.
 Options:
   --help  Show this message and exit.
 Commands:
@@ -85,4 +144,3 @@ Commands:
   list    List folder.
 ...
 ```
-
