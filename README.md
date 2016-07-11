@@ -63,18 +63,18 @@ This is the default app user when you manange folder/files in Box.
 ```
 $ boxcli --help 
 Usage: boxcli [OPTIONS] COMMAND [ARGS]...
-  box command line tool
+
 Options:
   --help  Show this message and exit.
 Commands:
-  file    sub-commands for manage box files.
-  folder  sub-commands for manage box folders.
-  user    sub-commands for manage box app users.
+  file    commands for manage box files.
+  folder  commands for manage box folders.
+  user    commands for manage box app users.
 ...
 
 $ boxcli folder --help
 Usage: boxcli folder [OPTIONS] COMMAND [ARGS]...
-  sub-commands for manage box folders.
+  commands for managing box folders.
 Options:
   --help  Show this message and exit.
 Commands:
