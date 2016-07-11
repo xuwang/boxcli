@@ -50,7 +50,7 @@ $ pip install --editable .
 	export BOX_DEFAULT_APP_USER_NAME=
 	```
 	
-## Create the default App User If you don't already have one
+## Create the Default App User if you don't already have one
 _boxcli_ handles box resources, i.e. folders/files, on behalf of a "box app user" as documented in [Creating Your First App User](https://docs.box.com/docs/app-users):
 
 ```
