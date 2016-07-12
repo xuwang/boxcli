@@ -1,7 +1,11 @@
 import os, sys, click
-from os.path import basename
+from os.path import basename, dirname
 from boxsdk.exception import *
 from auth import *
+from cmd_folder import create_folder, get_folder
+
+FOLDER_TYPE='folder'
+FILE_TYPE='file'
 
 @click.group()
 @click.pass_context
@@ -15,179 +19,140 @@ def file(ctx):
     pass
 
 @file.command()
-@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app name.')
+@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app user name.')
 @click.option('--limit', '-l', default=20, help='max number of items to get.')
 @click.option('--offset', '-o', default=0, help='offset of items to get.')
-@click.option('--parent-id', '-p', default='0', help='parent id')
-def list(user, limit, offset, parent_id):
-    """List file."""
+@click.argument('folder', default='/')
+def list(user, folder, limit, offset):
+    """List file in folder."""
     client = user_client(user)
-    root_folder = client.folder(folder_id=parent_id).get()
-    #owner = root_folder.owned_by
-    #print('The root file is owned by: {0} (id: {1})'.format(owner['name'], owner['id']))
-
-    items = root_folder.get_items(limit=limit, offset=offset)
+    parent = get_folder(client, folder)
     n = 0
-    for item in items:
-        if item.type == 'file':
-            n += 1
-            print(repr(item))
+    if parent is not None:
+        items = parent.get_items(limit=limit, offset=offset)
+        for item in items:
+            if item.type == FILE_TYPE:
+                n += 1
+                print(repr(item))
     if n == 0:
         print "No items found."
 
 @file.command()
-@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app name.')
-@click.option('--limit', '-l', default=20, help='max number of items to get.')
-@click.option('--offset', '-o', default=0, help='offset of items to get.')
-@click.option('--parent-id', '-p', default='0', help='parent id')
-@click.argument('file_name')
-def find(user, file_name, limit, offset, parent_id):
-    """Find files by name."""
+@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app user name.')
+@click.argument('path')
+def get(user, path):
+    """Get a file by path."""
     client=user_client(user)
-    results = find_items(client, user, file_name, limit, offset, parent_id)
-    if len(results) > 0:
-        for item in results:
-            if item.type == 'file':
-                print(repr(item))
-    else:
-        print('no matching items')
-
-@file.command()
-@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app name.')
-@click.option('--parent-id', '-p', default='0', help='parent id')
-@click.argument('file_name')
-def get(user, file_name, parent_id):
-    """Get a file by name."""
-    client=user_client(user)
-    item = get_file(client, file_name, parent_id)
+    item = get_file(client, path)
     if item is not None:
         exit(repr(item))
     else:
         print "No file found."
 
 @file.command()
-@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app name.')
-@click.option('--parent-id', '-p', default='0', help='parent id')
+@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app user name.')
 @click.option('--accelerator/--no-accelerator', default=False, help='enable upload via accelerator')
-@click.option('--local-file', '-f', help='local file to be uploaded')
-@click.argument('file')
-def upload(user, file, local_file, parent_id, accelerator):
+@click.option('--local-file', '-f', help='local file path to be uploaded')
+@click.argument('path')
+def upload(user, path, local_file, accelerator):
     """Upload a file."""
-    file_name = basename(file)
+    file_name = basename(path)
     if local_file is None:
         local_file = file_name
     client=user_client(user)
     file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), local_file)
 
     try:
-        parent = client.folder(folder_id=parent_id)
+        parent = create_folder(client, dirname(path))
         a_file = parent.upload(file_path, file_name=file_name, upload_using_accelerator=accelerator)
-        print("File '{0}' uploaded.".format(file_name))
+        print "'{0}' has been uploaded as '{1}'".format(local_file, path)
     except BoxAPIException as err:
         print("Box api error: {0}".format(err))
 
 @file.command()
-@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app name.')
-@click.option('--parent-id', '-p', default='0', help='parent id')
+@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app user name.')
 @click.option('--local-file', '-f', help='local file name')
-@click.argument('file')
-def download(user, file, local_file, parent_id, ):
+@click.argument('path')
+def download(user, path, local_file):
     """Download a file."""
-    file_name = basename(file)
     if local_file is None:
-        local_file = file_name
+        local_file =  basename(path)
     file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), local_file)
 
     client=user_client(user)
     try:
-        parent = client.folder(folder_id=parent_id)
-        box_file = get_file(client, file_name, parent_id)
+        box_file = get_file(client, path)
         if box_file is not None:
             file = open(local_file, 'w')
             box_file.download_to(file)
             file.close()
+            print "'{0}' has been downloaded as '{1}'".format(path, local_file)
         else:
-            print "File '{0}' not found.".format(file_name)
+            print "File '{0}' not found.".format(path)
     except BoxAPIException as err:
         print("Box api error: {0}".format(err))
 
 @file.command()
-@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app name.')
-@click.option('--parent-id', '-p', default='0', help='parent id')
+@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app user name.')
 @click.option('--local-file', '-f', help='local content file')
-@click.argument('file')
-def update(user, file, local_file, parent_id, ):
+@click.argument('path')
+def update(user, path, local_file):
     """Update a file."""
-    file_name = basename(file)
+    file_name = basename(path)
     if local_file is None:
         local_file = file_name
     file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), local_file)
 
     client=user_client(user)
     try:
-        parent = client.folder(folder_id=parent_id)
-        file_v1 = get_file(client, file_name, parent_id) 
+        file_v1 = get_file(client, path) 
         if file_v1 is not None:
-            file_v2 = file_v1.update_contents(file_path)
-            print("File '{0}' updated.".format(file_name))
+            file_v1.update_contents(file_path)
+            print("File '{0}' updated.".format(path))
         else:
-            print "File '{0}' not found.".format(file_name)
+            print "File '{0}' not found.".format(path)
     except BoxAPIException as err:
         print("Box api error: {0}".format(err))
 
 @file.command()
-@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app name.')
-@click.option('--parent-id', '-p', default='0', help='parent id')
-@click.argument('file_name')
+@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app user name.')
+@click.argument('path')
 @click.argument('new_name')
-def rename(user, file_name, new_name, parent_id):
+def rename(user, path, new_name):
     """Rename a file."""
     client=user_client(user)
-    item = get_file(client, file_name, parent_id)
+    item = get_file(client, path)
     if item is not None:
         try:
             item.rename(new_name)
-            print "File '{0}'' has been renamed to '{1}'".format(file_name, new_name)
+            print "File '{0}'' has been renamed to '{1}'".format(path, new_name)
         except BoxAPIException as err:
             exit("Box api error: {0}".format(err))
     else:
-        print "No file '{0}' found.".format(file_name)
+        print "No file '{0}' found.".format(path)
 
 @file.command()
-@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app name.')
-@click.option('--parent-id', '-p', default='0', help='parent id')
-@click.argument('file_name')
-def delete(user, file_name, parent_id):
+@click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app user name.')
+@click.argument('path')
+def delete(user, path):
     """Delete a folder."""
     client=user_client(user)
     try:
-        file = get_file(client, file_name, parent_id)
+        file = get_file(client, path)
         if file is not None:
             file.delete()
-            print ("File '{0}'' deleted".format(file_name))
+            print ("File '{0}'' deleted".format(path))
         else:
-            print "No file '{0}' found.".format(file_name)
+            print "No file '{0}' found.".format(path)
     except BoxAPIException as err:
         print("Box api error: {0}".format(err))
 
-def find_items(client, user, file_name, limit, offset, parent_id):
-    """Find items by name.
-        Issue: search api may miss newly created items"""
-    try:
-        return client.search(
-            file_name,
-            limit=limit,
-            offset=offset,
-            ancestor_folders=[client.folder(folder_id=parent_id)],
-        )
-    except BoxAPIException as err:
-        exit("Box api error: {0}".format(err))
-
-def get_file(client, file_name, parent_id):
-    parent_folder = client.folder(folder_id=parent_id).get()
-    items = parent_folder.get_items(limit=None, offset=0)
-    if len(items) > 0:
+def get_file(client, path):
+    parent_path = dirname(path)
+    parent = get_folder(client, parent_path)
+    if parent is not None:
+        items = parent.get_items(limit=None, offset=0)
         for item in items:
-            if item.name == file_name and item.type == 'file':
+            if item.name == basename(path) and item.type == FILE_TYPE:
                 return(item)
     return None
