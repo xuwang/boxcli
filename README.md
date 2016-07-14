@@ -55,7 +55,7 @@ _boxcli_ handles box resources, i.e. folders/files, on behalf of a "box app user
 
 ```
 $ source env.sh
-$ boxcli user create $BOX_DEFAULT_APP_USER_NAME
+$ boxcli user create "${BOX_DEFAULT_APP_USER_NAME}"
 ```
 This is the default app user when you manange folder/files in Box.
 
@@ -79,12 +79,6 @@ $ boxcli folder create myfiles
 $ boxcli folder delete  myfiles
 ```
 **Warning:** All items under _myfiles_ will be deleted recursively!
-
-### Update content of a file
-
-```
-$ boxcli file update README.md
-```
 
 ## File Operations
 
@@ -111,6 +105,7 @@ $ boxcli file download README.md
 ```
 $ boxcli file update README.md
 ```
+
 ### Delete a file
 
 ```
@@ -139,8 +134,7 @@ Options:
 Commands:
   create  Create a folder.
   delete  Delete a folder.
-  find    Find folders by name.
-  get     Get a folder by name.
-  list    List folder.
+  get     Get a folder attributes by path.
+  list    List items in a folder.
 ...
 ```
