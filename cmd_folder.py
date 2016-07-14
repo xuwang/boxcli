@@ -19,7 +19,7 @@ def folder(ctx):
 @click.option('--offset', '-o', default=0, help='offset of items to get.')
 @click.argument('path', default='/')
 def list(user, limit, offset, path):
-    """List folder."""
+    """List items in a folder."""
     client=user_client(user)
     try:
         parent = get_folder(client, path)
@@ -40,7 +40,7 @@ def list(user, limit, offset, path):
 @click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app user name.')
 @click.argument('path')
 def get(user, path):
-    """Get a folder by path."""
+    """Get a folder attributes by path."""
     client=user_client(user)
     item = get_folder(client, path)
     #item = get_folder(client, folder_name, parent_id)
