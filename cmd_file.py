@@ -24,7 +24,7 @@ def file(ctx):
 @click.option('--offset', '-o', default=0, help='offset of items to get.')
 @click.argument('folder', default='/')
 def list(user, folder, limit, offset):
-    """List file in folder."""
+    """List file in a folder."""
     client = user_client(user)
     parent = get_folder(client, folder)
     n = 0
@@ -41,7 +41,7 @@ def list(user, folder, limit, offset):
 @click.option('--user', '-u', envvar='BOX_DEFAULT_APP_USER_NAME', help='box app user name.')
 @click.argument('path')
 def get(user, path):
-    """Get a file by path."""
+    """Get file attributes."""
     client=user_client(user)
     item = get_file(client, path)
     if item is not None:
