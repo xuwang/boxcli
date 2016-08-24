@@ -4,7 +4,7 @@ _boxcli_ is written in Python with Click and Box SDK.
 ## Clone the repo
 
 ```
-$ git clone https://gitlab.med.stanford.edu/irt-dcs/boxcli
+$ git clone https://github.com/xuwang/boxcli
 $ cd boxcli
 
 ```
